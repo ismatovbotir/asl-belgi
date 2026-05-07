@@ -1,0 +1,72 @@
+{
+  "token": "DXJFX32CN1296678504F2",
+  "method": "sale",
+  "companyName": "E-POS Systems MCHJ",
+  "companyAddress": "Toshkent Sh., Yangi Olmazor, 51",
+  "companyINN": "123456789",
+  "staffName": "Abdulazizov Shakhboz",
+  "printerSize": 58,
+  "phoneNumber": "+998331234567",
+  "companyPhoneNumber": "+998711234567",
+  "params": {
+    "items": [
+      {
+        "price": 500000,
+        "discount": 250000,
+        "barcode": "9973150582171",
+        "amount": 1000,
+        "vatPercent": 12,
+        "vat": 10000,
+        "name": "Энергетический напиток Red bull Железная банка 0,25 л",
+        "label": "010478010116439421XzmjQbgliy5Xd91UZF092VVFVeDFM9cVd5zuu8avME8HQne9gxKQ8OH5ccczHLAg",
+        "classCode": "02202003001002001",
+        "packageCode": "1234",
+        "commissionTIN": "200523321",
+        "other": 100000,
+        "ownerType": 0
+      },
+      {
+        "discount": 250000,
+        "price": 1000000,
+        "barcode": "9973150582171",
+        "amount": 1000,
+        "vatPercent": 12,
+        "vat": 10000,
+        "name": "Энергетический напиток Flash Апельсиновый, Железная банка 0,25 л",
+        "classCode": "02202003001004001",
+        "packageCode": "1234",
+        "commissionTIN": 200523322,
+        "other": 100000,
+        "ownerType": 1
+      }
+    ],
+    "paycheckNumber": "A9/00000447",
+    "paymentNumber": "OTA00004534 от 10.10.2022",
+    "note": "За ноябрь",
+    "stateDuty": "16500000",
+    "fineAmount": "5600000",
+    "contractSum": "5000000",
+    "clientName": "Khamidov Iskander",
+    "discountCard": {
+      "available": "1500000",
+      "addition": "30000",
+      "subtraction": "0",
+      "remainder": "1530000"
+    },
+    "receivedCash": 150000,
+    "receivedCard": 650000,
+    "extraInfos": {
+      "ЦОТУ": "E-POS Systems LLC",
+      "Модель виртуальной кассы": "E-POS"
+    }
+  },
+  "extraInfo": {
+    "tin": "123456789",
+    "pinfl": "12345678901234",
+    "phoneNumber": "998991234567",
+    "carNumber": "01A123BC",
+    "cashedOutFromCard": 200000,
+    "cardType": 2,
+    "pptid": "sdadasdasdasd"
+  }
+}
