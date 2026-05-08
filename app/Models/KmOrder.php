@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class KmOrder extends Model
@@ -10,13 +11,18 @@ class KmOrder extends Model
     protected $fillable = [
         'name', 'external_order_id', 'product_group', 'release_method_type',
         'status', 'total_codes_requested', 'total_codes_downloaded',
-        'raw_data', 'closed_at', 'pdf_path',
+        'raw_data', 'closed_at', 'pdf_path', 'label_template_id',
     ];
 
     protected $casts = [
         'raw_data'   => 'array',
         'closed_at'  => 'datetime',
     ];
+
+    public function labelTemplate(): BelongsTo
+    {
+        return $this->belongsTo(LabelTemplate::class);
+    }
 
     public function items(): HasMany
     {

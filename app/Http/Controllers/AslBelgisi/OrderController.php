@@ -7,6 +7,8 @@ use App\Jobs\PollOrderStatusJob;
 use App\Models\KmCode;
 use App\Models\KmOrder;
 use App\Models\KmOrderItem;
+use App\Models\LabelTemplate;
+use App\Models\Product;
 use App\Services\AslBelgisi\Orders\OrderService;
 
 class OrderController extends Controller
@@ -35,9 +37,21 @@ class OrderController extends Controller
 
     public function show(KmOrder $order)
     {
-        $order->load('items');
+        $order->load(['items', 'labelTemplate']);
         $codes = KmCode::where('km_order_id', $order->id)->paginate(100);
-        return view('aslbelgisi.orders.show', compact('order', 'codes'));
+
+        $templates = LabelTemplate::orderBy('name')->get();
+
+        $firstCode = KmCode::where('km_order_id', $order->id)
+            ->where('status', 'available')
+            ->first();
+
+        $firstProduct = null;
+        if ($firstCode?->gtin) {
+            $firstProduct = Product::where('gtin', $firstCode->gtin)->first();
+        }
+
+        return view('aslbelgisi.orders.show', compact('order', 'codes', 'templates', 'firstCode', 'firstProduct'));
     }
 
     public function refreshStatus(KmOrder $order)

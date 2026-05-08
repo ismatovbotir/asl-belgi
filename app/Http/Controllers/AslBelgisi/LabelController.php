@@ -66,12 +66,23 @@ class LabelController extends Controller
         return view('aslbelgisi.labels.print', compact('order', 'codes', 'products', 'labelSize'));
     }
 
+    public function setTemplate(Request $request, KmOrder $order)
+    {
+        $validated = $request->validate([
+            'label_template_id' => 'nullable|exists:label_templates,id',
+        ]);
+
+        $order->update(['label_template_id' => $validated['label_template_id'] ?: null]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function generatePdf(Request $request, KmOrder $order)
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        $order->load('items');
+        $order->load(['items', 'labelTemplate']);
 
         $itemId = $request->input('item_id');
         $limit  = (int) $request->input('limit', 0);
@@ -92,10 +103,24 @@ class LabelController extends Controller
         $gtins    = $order->items->pluck('gtin')->filter()->unique()->values();
         $products = Product::whereIn('gtin', $gtins)->get()->keyBy('gtin');
 
-        $pdf = Pdf::loadView('aslbelgisi.labels.pdf', compact('order', 'codes', 'products'))
-            ->setPaper([0, 0, 170.08, 113.39], 'portrait') // 60×40mm in points (1mm = 2.8346pt)
+        $tpl = $order->labelTemplate;
+
+        if ($tpl) {
+            $wPt  = round($tpl->width_mm  * 2.8346, 2);
+            $hPt  = round($tpl->height_mm * 2.8346, 2);
+            $view = 'aslbelgisi.labels.template_pdf';
+            $data = compact('order', 'codes', 'products', 'tpl');
+        } else {
+            $wPt  = 170.08;
+            $hPt  = 113.39;
+            $view = 'aslbelgisi.labels.pdf';
+            $data = compact('order', 'codes', 'products');
+        }
+
+        $pdf = Pdf::loadView($view, $data)
+            ->setPaper([0, 0, $wPt, $hPt], 'portrait')
             ->setOptions([
-                'defaultFont'             => 'Arial',
+                'defaultFont'             => 'DejaVu Sans',
                 'isPhpEnabled'            => true,
                 'isFontSubsettingEnabled' => true,
                 'dpi'                     => 96,

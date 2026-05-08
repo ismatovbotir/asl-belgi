@@ -22,6 +22,7 @@ class KmCode extends Model
         'km_order_id', 'km_order_item_id', 'aggregation_id',
         'code', 'cis',
         'gtin', 'serial_number', 'expiry_date', 'batch',
+        'verification_key', 'verification_code',
         'status', 'label_printed', 'printed_at', 'applied_at',
     ];
 

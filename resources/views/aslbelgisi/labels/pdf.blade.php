@@ -37,9 +37,9 @@ table.lbl-right > tbody > tr > td {
     padding: 0;
 }
 
-.tr-name  { min-height: 19mm;   /* 50% of 38mm */ }
-.tr-bc    { min-height: 17.1mm; /* 45% of 38mm */ }
-.tr-pg    { min-height: 1.9mm;  /* 5%  of 38mm */ }
+.tr-name { height: 19mm; }
+.tr-pg   { height: 1.9mm; }
+.tr-bc   { height: 17.1mm; }
 
 .td-name {
     vertical-align: top;
@@ -49,27 +49,26 @@ table.lbl-right > tbody > tr > td {
     line-height: 1.3;
     overflow: hidden;
 }
-.td-bc {
-    vertical-align: middle;
-    text-align: center;
-}
 .td-pg {
     vertical-align: middle;
     font-size: 5px;
     color: #777;
 }
-.gtin-text { font-size: 5.5px; font-family: monospace; color: #444; margin-top: 0.5mm; }
+.td-bc {
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+}
 
 @page { margin: 0; size: 60mm 40mm; }
 </style>
 </head>
 <body>
-
 <script type="text/php">
     if (isset($pdf)) {
         $font = $fontMetrics->getFont("DejaVu Sans", "normal");
-        // Right half bottom-left: x=32mm=90.7pt, y≈108pt from top (1mm padding, 38mm inner height)
-        $pdf->page_text(90.7, 108, "{PAGE_NUM}", $font, 5, [0.6, 0.6, 0.6]);
+        // Right half: x=32mm=90.7pt; page num row starts at 1mm+19mm=20mm≈56.7pt from top
+        $pdf->page_text(90.7, 61, "{PAGE_NUM}", $font, 5, [0.6, 0.6, 0.6]);
     }
 </script>
 
@@ -110,18 +109,17 @@ table.lbl-right > tbody > tr > td {
                 <td class="td-name">{{ mb_strimwidth($name, 0, 60, '…') }}</td>
             </tr>
 
+            <tr class="tr-pg">
+                <td class="td-pg">&nbsp;</td>{{-- number injected by page_text() --}}
+            </tr>
+
             <tr class="tr-bc">
                 <td class="td-bc">
                     @if($ean13)
                         @php $ean = \DNS1D::getBarcodePNG($ean13, 'EAN13', 1, 30, [0,0,0], true); @endphp
-                        <img src="data:image/png;base64,{{ $ean }}" style="max-width:26mm; height:auto;" alt="">
+                        <img src="data:image/png;base64,{{ $ean }}" style="max-width:26mm; max-height:15mm; height:auto;" alt="">
                     @endif
-                    <div class="gtin-text">{{ ($gtin[0] ?? '') === '0' ? substr($gtin, 1) : $gtin }}</div>
                 </td>
-            </tr>
-
-            <tr class="tr-pg">
-                <td class="td-pg">&nbsp;</td>{{-- number injected by page_text() --}}
             </tr>
 
           </tbody></table>

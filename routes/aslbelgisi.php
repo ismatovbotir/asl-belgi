@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AslBelgisi\AuthController;
 use App\Http\Controllers\AslBelgisi\LabelController;
+use App\Http\Controllers\AslBelgisi\LabelTemplateController;
 use App\Http\Controllers\AslBelgisi\OrderController;
 use App\Http\Controllers\AslBelgisi\ProductController;
 use Illuminate\Support\Facades\Route;
@@ -34,4 +35,13 @@ Route::name('asl.')->group(function () {
     Route::post('/labels/{order}/mark-printed',     [LabelController::class, 'markPrinted'])->name('labels.markPrinted');
     Route::post('/labels/{order}/generate-pdf',     [LabelController::class, 'generatePdf'])->name('labels.generatePdf');
     Route::get('/labels/{order}/pdf/{file}',        [LabelController::class, 'downloadPdf'])->name('labels.downloadPdf');
+    Route::post('/labels/{order}/set-template',     [LabelController::class, 'setTemplate'])->name('labels.setTemplate');
+
+    // Label Templates (Designer)
+    Route::get('/label-templates',                           [LabelTemplateController::class, 'index'])->name('label-templates.index');
+    Route::get('/label-templates/create',                    [LabelTemplateController::class, 'create'])->name('label-templates.create');
+    Route::post('/label-templates',                          [LabelTemplateController::class, 'store'])->name('label-templates.store');
+    Route::get('/label-templates/{labelTemplate}/edit',      [LabelTemplateController::class, 'edit'])->name('label-templates.edit');
+    Route::put('/label-templates/{labelTemplate}',           [LabelTemplateController::class, 'update'])->name('label-templates.update');
+    Route::delete('/label-templates/{labelTemplate}',        [LabelTemplateController::class, 'destroy'])->name('label-templates.destroy');
 });

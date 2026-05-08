@@ -36,18 +36,17 @@
     }
     .lp-name { font-size: 8px; font-weight: bold; line-height: 1.3; word-break: break-word; }
 
-    .lp-bc-row {
-        height: 45%;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
-    #previewBc  { display: block; max-width: 100%; }
-    .lp-gtin    { font-size: 5.5px; font-family: monospace; color: #555; margin-top: 1px; }
-
     .lp-pg-row  {
         height: 5%;
         display: flex; align-items: center;
         font-size: 5.5px; color: #999; font-family: monospace;
     }
+
+    .lp-bc-row {
+        height: 45%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    #previewBc  { display: block; max-width: 100%; }
 </style>
 @endpush
 
@@ -166,11 +165,10 @@
                                     {{ $sampleProduct?->name ?? ($order->name ?? 'Product Name') }}
                                 </div>
                             </div>
+                            <div class="lp-pg-row">1</div>
                             <div class="lp-bc-row">
                                 <canvas id="previewBc"></canvas>
-                                <div class="lp-gtin">{{ ($sampleGtin[0] ?? '') === '0' ? substr($sampleGtin, 1) : $sampleGtin }}</div>
                             </div>
-                            <div class="lp-pg-row">1</div>
                         </div>
                     </div>
                     <div class="text-muted mt-2 text-center" style="font-size:0.75rem;">60 × 40 mm preview</div>

@@ -107,8 +107,11 @@
         </a>
 
         <div class="nav-section">Output</div>
-        <a class="nav-link {{ request()->routeIs('asl.labels*') ? 'active' : '' }}" href="{{ route('asl.labels.index') }}">
+        <a class="nav-link {{ request()->routeIs('asl.labels*') && !request()->routeIs('asl.label-templates*') ? 'active' : '' }}" href="{{ route('asl.labels.index') }}">
             <i class="bi bi-printer"></i> Label Design
+        </a>
+        <a class="nav-link {{ request()->routeIs('asl.label-templates*') ? 'active' : '' }}" href="{{ route('asl.label-templates.index') }}">
+            <i class="bi bi-layout-text-window-reverse"></i> Label Templates
         </a>
     @else
         <div class="nav-section">Catalog</div>

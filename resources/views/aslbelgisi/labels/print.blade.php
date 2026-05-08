@@ -68,18 +68,7 @@
             word-break: break-word;
         }
 
-        /* Row 2 — 45 % — EAN-13 barcode */
-        .lbl-bc-row {
-            height: 45%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .lbl-bc-row canvas { display: block; max-width: 100%; }
-        .lbl-gtin-text { font-size: 5.5px; font-family: monospace; color: #555; margin-top: 1px; }
-
-        /* Row 3 — 5 % — page number */
+        /* Row 2 — 5 % — page number */
         .lbl-pg-row {
             height: 5%;
             display: flex;
@@ -88,6 +77,16 @@
             color: #999;
             font-family: monospace;
         }
+
+        /* Row 3 — 45 % — EAN-13 barcode */
+        .lbl-bc-row {
+            height: 45%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .lbl-bc-row canvas { display: block; max-width: 100%; }
 
         .rendering-msg { text-align: center; padding: 40px; color: #666; font-size: 0.9rem; }
 
@@ -165,11 +164,10 @@ async function renderLabels() {
                 <div class="lbl-name-row">
                     <div class="lbl-name">${escHtml(name || c.gtin)}</div>
                 </div>
+                <div class="lbl-pg-row">${i + 1}</div>
                 <div class="lbl-bc-row">
                     ${ean ? `<canvas id="bc_${i}"></canvas>` : ''}
-                    <div class="lbl-gtin-text">${escHtml(c.gtin ? (c.gtin[0] === '0' ? c.gtin.slice(1) : c.gtin) : '')}</div>
                 </div>
-                <div class="lbl-pg-row">${i + 1}</div>
             </div>
         `;
         grid.appendChild(label);
