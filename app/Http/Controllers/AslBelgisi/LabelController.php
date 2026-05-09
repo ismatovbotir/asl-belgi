@@ -5,7 +5,9 @@ namespace App\Http\Controllers\AslBelgisi;
 use App\Http\Controllers\Controller;
 use App\Models\KmCode;
 use App\Models\KmOrder;
+use App\Models\Printer;
 use App\Models\Product;
+use App\Services\Label\GodexWbPrintService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -144,6 +146,82 @@ class LabelController extends Controller
             'url'      => $downloadUrl,
             'filename' => basename($filename),
             'count'    => $codes->count(),
+        ]);
+    }
+
+    public function printDirect(Request $request, KmOrder $order)
+    {
+        $printer = Printer::with('printerType')->find($request->input('printer_id'));
+
+        if (! $printer) {
+            return response()->json(['success' => false, 'message' => 'Printer not found.'], 422);
+        }
+
+        $wbprintSlugs = ['godex_wbprint', 'windows_spooler'];
+        if (! in_array($printer->printerType->slug, $wbprintSlugs)) {
+            return response()->json(['success' => false, 'message' => "Renderer for '{$printer->printerType->name}' not yet implemented."], 422);
+        }
+
+        $order->load(['items', 'labelTemplate']);
+
+        $itemId = $request->input('item_id');
+        $limit  = (int) $request->input('limit', 0);
+
+        $query = KmCode::where('km_order_id', $order->id)->where('status', 'available');
+        if ($itemId) $query->where('km_order_item_id', $itemId);
+        if ($limit > 0) $query->limit($limit);
+        $codes = $query->get();
+
+        if ($codes->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No available codes found.'], 422);
+        }
+
+        $gtins    = $order->items->pluck('gtin')->filter()->unique();
+        $products = Product::whereIn('gtin', $gtins)->get()->keyBy('gtin');
+
+        $service = GodexWbPrintService::fromPrinter($printer);
+
+        // windows_spooler: WBPrint with USB interface using the installed printer name
+        $interfaceConfig = $printer->printerType->slug === 'windows_spooler'
+            ? ['Interface' => 'USB', 'USB' => $printer->param('printer_name', '')]
+            : $service->buildInterfaceConfig($printer->parameters ?? []);
+        $dpi             = (int) $printer->param('dpi', 203);
+        $tpl             = $order->labelTemplate;
+
+        if (! $tpl) {
+            return response()->json(['success' => false, 'message' => 'Assign a label template to the order before printing.'], 422);
+        }
+
+        $widthMm  = $tpl->width_mm;
+        $heightMm = $tpl->height_mm;
+
+        $sent   = 0;
+        $failed = 0;
+
+        foreach ($codes as $code) {
+            $product = isset($code->gtin) ? ($products[$code->gtin] ?? null) : null;
+
+            $ok = $service->printCode(
+                interfaceConfig: $interfaceConfig,
+                code:            $code,
+                widthMm:         $widthMm,
+                heightMm:        $heightMm,
+                dpi:             $dpi,
+                product:         $product,
+                tpl:             $tpl,
+            );
+
+            $ok ? $sent++ : $failed++;
+        }
+
+        $message = "Sent {$sent} label(s) to {$printer->name}.";
+        if ($failed) $message .= " {$failed} failed.";
+
+        return response()->json([
+            'success' => $failed === 0,
+            'sent'    => $sent,
+            'failed'  => $failed,
+            'message' => $message,
         ]);
     }
 

@@ -8,6 +8,7 @@ use App\Models\KmCode;
 use App\Models\KmOrder;
 use App\Models\KmOrderItem;
 use App\Models\LabelTemplate;
+use App\Models\Printer;
 use App\Models\Product;
 use App\Services\AslBelgisi\Orders\OrderService;
 
@@ -42,6 +43,12 @@ class OrderController extends Controller
 
         $templates = LabelTemplate::orderBy('name')->get();
 
+        $printers = Printer::with('printerType')
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get();
+
         $firstCode = KmCode::where('km_order_id', $order->id)
             ->where('status', 'available')
             ->first();
@@ -51,7 +58,7 @@ class OrderController extends Controller
             $firstProduct = Product::where('gtin', $firstCode->gtin)->first();
         }
 
-        return view('aslbelgisi.orders.show', compact('order', 'codes', 'templates', 'firstCode', 'firstProduct'));
+        return view('aslbelgisi.orders.show', compact('order', 'codes', 'templates', 'printers', 'firstCode', 'firstProduct'));
     }
 
     public function refreshStatus(KmOrder $order)

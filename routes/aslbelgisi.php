@@ -4,6 +4,7 @@ use App\Http\Controllers\AslBelgisi\AuthController;
 use App\Http\Controllers\AslBelgisi\LabelController;
 use App\Http\Controllers\AslBelgisi\LabelTemplateController;
 use App\Http\Controllers\AslBelgisi\OrderController;
+use App\Http\Controllers\AslBelgisi\PrinterController;
 use App\Http\Controllers\AslBelgisi\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,12 +29,22 @@ Route::name('asl.')->group(function () {
     Route::post('/orders/{order}/poll',             [OrderController::class, 'pollStatus'])->name('orders.poll');
     Route::post('/orders/{order}/buffers/{item}/download', [OrderController::class, 'downloadBuffer'])->name('orders.download');
 
+    // Printers
+    Route::get('/printers',                          [PrinterController::class, 'index'])->name('printers.index');
+    Route::get('/printers/create',                   [PrinterController::class, 'create'])->name('printers.create');
+    Route::post('/printers',                         [PrinterController::class, 'store'])->name('printers.store');
+    Route::get('/printers/{printer}/edit',           [PrinterController::class, 'edit'])->name('printers.edit');
+    Route::put('/printers/{printer}',                [PrinterController::class, 'update'])->name('printers.update');
+    Route::post('/printers/{printer}/default',       [PrinterController::class, 'setDefault'])->name('printers.default');
+    Route::delete('/printers/{printer}',             [PrinterController::class, 'destroy'])->name('printers.destroy');
+
     // Label Design
     Route::get('/labels',                           [LabelController::class, 'index'])->name('labels.index');
     Route::get('/labels/{order}',                   [LabelController::class, 'designer'])->name('labels.designer');
     Route::get('/labels/{order}/print',             [LabelController::class, 'print'])->name('labels.print');
     Route::post('/labels/{order}/mark-printed',     [LabelController::class, 'markPrinted'])->name('labels.markPrinted');
     Route::post('/labels/{order}/generate-pdf',     [LabelController::class, 'generatePdf'])->name('labels.generatePdf');
+    Route::post('/labels/{order}/print-direct',     [LabelController::class, 'printDirect'])->name('labels.printDirect');
     Route::get('/labels/{order}/pdf/{file}',        [LabelController::class, 'downloadPdf'])->name('labels.downloadPdf');
     Route::post('/labels/{order}/set-template',     [LabelController::class, 'setTemplate'])->name('labels.setTemplate');
 

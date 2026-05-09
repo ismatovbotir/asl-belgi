@@ -113,6 +113,9 @@
         <a class="nav-link {{ request()->routeIs('asl.label-templates*') ? 'active' : '' }}" href="{{ route('asl.label-templates.index') }}">
             <i class="bi bi-layout-text-window-reverse"></i> Label Templates
         </a>
+        <a class="nav-link {{ request()->routeIs('asl.printers*') ? 'active' : '' }}" href="{{ route('asl.printers.index') }}">
+            <i class="bi bi-hdd-network"></i> Printers
+        </a>
     @else
         <div class="nav-section">Catalog</div>
         <span class="nav-link text-secondary" style="opacity:.45;cursor:default;">

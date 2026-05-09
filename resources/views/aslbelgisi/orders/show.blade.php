@@ -91,18 +91,37 @@
                         </option>
                     @endforeach
                 </select>
-                <div class="d-flex gap-2 mt-3">
-                    <button id="btn-gen-pdf" class="btn btn-danger btn-sm" {{ $firstCode ? '' : 'disabled' }}>
-                        <i class="bi bi-file-earmark-pdf"></i> Generate PDF
-                    </button>
-                    <a href="{{ route('asl.labels.designer', $order) }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-printer"></i> Print View
-                    </a>
-                    <a href="{{ route('asl.label-templates.create') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-plus"></i> New Template
-                    </a>
+                <div class="mt-3">
+                    <label class="form-label fw-semibold small">Printer</label>
+                    @if($printers->isEmpty())
+                        <div class="alert alert-warning py-2 px-3 small mb-2">
+                            No printers configured.
+                            <a href="{{ route('asl.printers.create') }}" class="alert-link">Add a printer</a>
+                        </div>
+                    @else
+                        <select id="printer-select" class="form-select form-select-sm mb-2">
+                            @foreach($printers as $printer)
+                                <option value="{{ $printer->id }}"
+                                        data-type="{{ $printer->printerType->slug }}"
+                                        data-type-name="{{ $printer->printerType->name }}"
+                                        {{ $printer->is_default ? 'selected' : '' }}>
+                                    {{ $printer->name }}{{ $printer->is_default ? ' (Default)' : '' }}
+                                    — {{ $printer->printerType->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
+                    <div class="d-flex gap-2">
+                        <button id="btn-print" class="btn btn-primary btn-sm"
+                                {{ ($firstCode && $printers->isNotEmpty()) ? '' : 'disabled' }}>
+                            <i class="bi bi-printer"></i> Print
+                        </button>
+                        <a href="{{ route('asl.label-templates.create') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-plus"></i> New Template
+                        </a>
+                    </div>
+                    <div id="print-status" class="mt-2 small"></div>
                 </div>
-                <div id="pdf-status" class="mt-2 small"></div>
             </div>
             <div class="col-md-7 text-center">
                 <div class="text-muted small mb-2">Preview <span id="prev-size-lbl" class="text-primary"></span></div>
@@ -269,9 +288,10 @@
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@4/dist/bwip-js-min.js"></script>
 <script>
 const SCALE  = 4; // px per mm for order preview
-const setUrl = "{{ route('asl.labels.setTemplate', $order) }}";
-const pdfUrl = "{{ route('asl.labels.generatePdf', $order) }}";
-const csrfToken = "{{ csrf_token() }}";
+const setUrl        = "{{ route('asl.labels.setTemplate', $order) }}";
+const pdfUrl        = "{{ route('asl.labels.generatePdf', $order) }}";
+const printDirectUrl = "{{ route('asl.labels.printDirect', $order) }}";
+const csrfToken     = "{{ csrf_token() }}";
 
 @php
     $firstGtin = $firstCode?->gtin ?? '04607004951015';
@@ -398,29 +418,59 @@ document.getElementById('tpl-select')?.addEventListener('change', async function
     });
 });
 
-document.getElementById('btn-gen-pdf')?.addEventListener('click', async function() {
-    this.disabled = true;
-    const status  = document.getElementById('pdf-status');
-    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split"></i> Generating PDF…</span>';
+document.getElementById('btn-print')?.addEventListener('click', async function() {
+    const printerSelect = document.getElementById('printer-select');
+    const selectedOpt   = printerSelect?.options[printerSelect.selectedIndex];
+    const printerType   = selectedOpt?.dataset.type ?? 'pdf';
+    const printerName   = selectedOpt?.dataset.typeName ?? '';
+    const printerId     = selectedOpt?.value ?? '';
 
-    try {
-        const resp = await fetch(pdfUrl, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': csrfToken},
-            body: JSON.stringify({}),
-        });
-        const data = await resp.json();
-        if (data.success) {
-            status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i>
-                ${data.count} labels •
-                <a href="${data.url}" target="_blank" class="fw-semibold">Download PDF</a>
-            </span>`;
-        } else {
-            status.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle"></i> ${data.message}</span>`;
+    this.disabled = true;
+    const status = document.getElementById('print-status');
+
+    if (printerType === 'pdf') {
+        status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split"></i> Generating PDF…</span>';
+        try {
+            const resp = await fetch(pdfUrl, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': csrfToken},
+                body: JSON.stringify({printer_id: printerId}),
+            });
+            const data = await resp.json();
+            if (data.success) {
+                status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i>
+                    ${data.count} labels •
+                    <a href="${data.url}" target="_blank" class="fw-semibold">Download PDF</a>
+                </span>`;
+            } else {
+                status.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle"></i> ${data.message}</span>`;
+            }
+        } catch(e) {
+            status.innerHTML = '<span class="text-danger">Request failed. Try again.</span>';
         }
-    } catch(e) {
-        status.innerHTML = '<span class="text-danger">Request failed. Try again.</span>';
+    } else if (printerType === 'godex_wbprint' || printerType === 'windows_spooler') {
+        status.innerHTML = `<span class="text-muted"><i class="bi bi-hourglass-split"></i> Sending to <strong>${selectedOpt?.text.split('—')[0].trim()}</strong>…</span>`;
+        try {
+            const resp = await fetch(printDirectUrl, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': csrfToken},
+                body: JSON.stringify({printer_id: printerId}),
+            });
+            const data = await resp.json();
+            if (data.success) {
+                status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> ${data.message}</span>`;
+            } else {
+                status.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle"></i> ${data.message}</span>`;
+            }
+        } catch(e) {
+            status.innerHTML = '<span class="text-danger">Could not reach WBPrint service. Is it running on port 8080?</span>';
+        }
+    } else {
+        status.innerHTML = `<span class="text-warning"><i class="bi bi-clock"></i>
+            <strong>${printerName}</strong> is not yet supported. Use PDF, Godex WBPrint, or Windows Printer.
+        </span>`;
     }
+
     this.disabled = false;
 });
 </script>
