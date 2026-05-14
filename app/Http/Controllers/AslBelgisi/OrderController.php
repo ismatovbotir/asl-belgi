@@ -49,6 +49,10 @@ class OrderController extends Controller
             ->orderBy('name')
             ->get();
 
+        $availableCount = KmCode::where('km_order_id', $order->id)
+            ->where('status', 'available')
+            ->count();
+
         $firstCode = KmCode::where('km_order_id', $order->id)
             ->where('status', 'available')
             ->first();
@@ -58,7 +62,7 @@ class OrderController extends Controller
             $firstProduct = Product::where('gtin', $firstCode->gtin)->first();
         }
 
-        return view('aslbelgisi.orders.show', compact('order', 'codes', 'templates', 'printers', 'firstCode', 'firstProduct'));
+        return view('aslbelgisi.orders.show', compact('order', 'codes', 'templates', 'printers', 'availableCount', 'firstCode', 'firstProduct'));
     }
 
     public function refreshStatus(KmOrder $order)

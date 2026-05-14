@@ -162,7 +162,7 @@ class LabelController extends Controller
             return response()->json(['success' => false, 'message' => "Renderer for '{$printer->printerType->name}' not yet implemented."], 422);
         }
 
-        $order->load(['items', 'labelTemplate']);
+        $order->load('items');
 
         $itemId = $request->input('item_id');
         $limit  = (int) $request->input('limit', 0);
@@ -181,34 +181,28 @@ class LabelController extends Controller
 
         $service = GodexWbPrintService::fromPrinter($printer);
 
-        // windows_spooler: WBPrint with USB interface using the installed printer name
         $interfaceConfig = $printer->printerType->slug === 'windows_spooler'
             ? ['Interface' => 'USB', 'USB' => $printer->param('printer_name', '')]
             : $service->buildInterfaceConfig($printer->parameters ?? []);
-        $dpi             = (int) $printer->param('dpi', 203);
-        $tpl             = $order->labelTemplate;
-
-        if (! $tpl) {
-            return response()->json(['success' => false, 'message' => 'Assign a label template to the order before printing.'], 422);
-        }
-
-        $widthMm  = $tpl->width_mm;
-        $heightMm = $tpl->height_mm;
 
         $sent   = 0;
         $failed = 0;
 
         foreach ($codes as $code) {
-            $product = isset($code->gtin) ? ($products[$code->gtin] ?? null) : null;
+            /** @var Product|null $product */
+            $product = $code->gtin ? ($products[$code->gtin] ?? null) : null;
 
-            $ok = $service->printCode(
+            $gtin  = $code->gtin ?? '';
+            $ean13 = (strlen($gtin) === 14 && $gtin[0] === '0') ? substr($gtin, 1) : $gtin;
+
+            $ok = $service->printGodexTemplate(
                 interfaceConfig: $interfaceConfig,
-                code:            $code,
-                widthMm:         $widthMm,
-                heightMm:        $heightMm,
-                dpi:             $dpi,
-                product:         $product,
-                tpl:             $tpl,
+                cis:             $code->cis ?? '',
+                textUnderDm:     $code->serial_number ?? '',
+                name:            $product?->name_ru ?? $product?->name ?? $gtin,
+                brand:           $product?->brand ?? '',
+                model:           $product?->attributes['model'] ?? '',
+                ean13:           $ean13,
             );
 
             $ok ? $sent++ : $failed++;

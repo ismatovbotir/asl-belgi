@@ -111,14 +111,22 @@
                             @endforeach
                         </select>
                     @endif
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small">
+                            Label Quantity
+                            <span class="text-muted fw-normal">({{ number_format($availableCount) }} available)</span>
+                        </label>
+                        <input type="number" id="print-qty"
+                               class="form-control form-control-sm"
+                               value="{{ $availableCount }}"
+                               min="1"
+                               style="width:120px;">
+                    </div>
                     <div class="d-flex gap-2">
                         <button id="btn-print" class="btn btn-primary btn-sm"
                                 {{ ($firstCode && $printers->isNotEmpty()) ? '' : 'disabled' }}>
                             <i class="bi bi-printer"></i> Print
                         </button>
-                        <a href="{{ route('asl.label-templates.create') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-plus"></i> New Template
-                        </a>
                     </div>
                     <div id="print-status" class="mt-2 small"></div>
                 </div>
@@ -424,6 +432,7 @@ document.getElementById('btn-print')?.addEventListener('click', async function()
     const printerType   = selectedOpt?.dataset.type ?? 'pdf';
     const printerName   = selectedOpt?.dataset.typeName ?? '';
     const printerId     = selectedOpt?.value ?? '';
+    const printQty      = parseInt(document.getElementById('print-qty')?.value ?? '0', 10) || 0;
 
     this.disabled = true;
     const status = document.getElementById('print-status');
@@ -434,7 +443,7 @@ document.getElementById('btn-print')?.addEventListener('click', async function()
             const resp = await fetch(pdfUrl, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': csrfToken},
-                body: JSON.stringify({printer_id: printerId}),
+                body: JSON.stringify({printer_id: printerId, limit: printQty}),
             });
             const data = await resp.json();
             if (data.success) {
@@ -454,7 +463,7 @@ document.getElementById('btn-print')?.addEventListener('click', async function()
             const resp = await fetch(printDirectUrl, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': csrfToken},
-                body: JSON.stringify({printer_id: printerId}),
+                body: JSON.stringify({printer_id: printerId, limit: printQty}),
             });
             const data = await resp.json();
             if (data.success) {

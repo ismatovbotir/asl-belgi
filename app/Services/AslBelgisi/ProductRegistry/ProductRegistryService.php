@@ -59,7 +59,9 @@ class ProductRegistryService extends AslBelgisiClient
                 'category_code'      => data_get($item, 'productCategory.code'),
                 'tnved_code'         => data_get($item, 'tnved.code'),
                 'package_type'       => data_get($item, 'packageType.code'),
-                'brand'              => null,
+                'brand'              => data_get($item, 'brand')
+                                    ?? data_get($item, 'brandName')
+                                    ?? data_get($item, 'trademark'),
                 'attributes'         => $item,
                 'synced_at'          => $now,
             ]);

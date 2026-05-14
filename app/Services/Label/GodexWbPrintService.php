@@ -118,6 +118,76 @@ class GodexWbPrintService
     }
 
     /**
+     * Build an EPL2 label string from the fixed Godex 60×40 mm template.
+     *
+     * Field layout (all text is rotated 90° via the Y command):
+     *   DataMatrix graphic  — XRB at dot (28, 34), data = $cis
+     *   Text under DM       — Y at dot (18, 186)  = $textUnderDm
+     *   Brand               — Y at dot (198, 31)  = $brand   (max ~34 chars)
+     *   Product name        — Y at dot (198, 80)  = $name    (max ~85 chars)
+     *   Model               — Y at dot (200, 132) = $model   (max ~40 chars)
+     *   EAN-13 barcode      — BE at dot (230, 200) = $ean13
+     */
+    public function buildGodexTemplate(
+        string $cis,
+        string $textUnderDm,
+        string $name,
+        string $brand,
+        string $model,
+        string $ean13,
+        int    $copies = 1,
+    ): string {
+        $cisLen = strlen($cis);
+
+        $lines = [
+            '^XSETCUT,DOUBLECUT,0',
+            '^Q40,3',
+            '^W60',
+            '^H8',
+            "^P{$copies}",
+            '^S4',
+            '^AD',
+            '^C1',
+            '^R0',
+            '~Q+0',
+            '^O0',
+            '^D0',
+            '^E18',
+            '~R255',
+            '^L',
+            'Dy2-me-dd',
+            'Th:m:s',
+            "Y18,186,{$textUnderDm}",
+            "Y198,31,{$brand}",
+            "Y198,80,{$name}",
+            "Y200,132,{$model}",
+            "XRB28,34,4,0,{$cisLen}",
+            "~1{$cis}",
+            "BE,230,200,2,6,80,0,1,{$ean13}",
+            'E',
+        ];
+
+        return implode("\r\n", $lines) . "\r\n";
+    }
+
+    /**
+     * Print a label using the fixed Godex 60×40 mm template.
+     */
+    public function printGodexTemplate(
+        array  $interfaceConfig,
+        string $cis,
+        string $textUnderDm,
+        string $name,
+        string $brand,
+        string $model,
+        string $ean13,
+        int    $copies = 1,
+    ): bool {
+        $ezpl = $this->buildGodexTemplate($cis, $textUnderDm, $name, $brand, $model, $ean13, $copies);
+        return $this->send($interfaceConfig, $ezpl);
+    }
+
+    /**
      * Print a single KM code label using a template or default layout.
      */
     public function printCode(
@@ -159,8 +229,19 @@ class GodexWbPrintService
 
         $builder->header(copies: $copies);
 
-        // DataMatrix — the KM code (CIS value)
-        $builder->dataMatrix($dm['x'] ?? 1, $dm['y'] ?? 7.5, $code->cis, $moduleSize);
+        // GS1 DataMatrix — same structure as PDF template
+        // chr(232) = FNC1 (GS1 start marker), chr(29) = GS separator between variable-length AIs
+        $gs1 = '';
+        if ($code->gtin && strlen($code->gtin) === 14) {
+            $gs1 = chr(232) . '01' . $code->gtin;
+            if ($code->serial_number)     $gs1 .= '21' . $code->serial_number     . chr(29);
+            if ($code->verification_key)  $gs1 .= '91' . $code->verification_key  . chr(29);
+            if ($code->verification_code) $gs1 .= '92' . $code->verification_code;
+        } else {
+            $gs1 = $code->cis ?? '';
+        }
+
+        $builder->dataMatrix($dm['x'] ?? 1, $dm['y'] ?? 7.5, $gs1, $moduleSize);
 
         // Product name
         if (!empty($nm['visible'])) {
