@@ -25,7 +25,7 @@ class OrderController extends Controller
     public function import(\Illuminate\Http\Request $request)
     {
         $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:20480',
+            'csv_file' => 'required|file|mimetypes:text/plain,text/csv,application/csv,application/vnd.ms-excel,application/octet-stream|max:20480',
         ]);
 
         try {
